@@ -75,15 +75,10 @@ public class ManajemenCustomer extends Application {
             });
         });
 
-        btnTambah.setOnAction(e -> {
-            if (tfId.getText().isEmpty() || tfNama.getText().isEmpty()
-                    || tfEmail.getText().isEmpty() || tfTelepon.getText().isEmpty()) {
-                showAlert("Error", "Semua kolom harus diisi!");
-                return;
-            }
-            data.add(new Customer(tfId.getText(), tfNama.getText(), tfEmail.getText(), tfTelepon.getText()));
-            clearForm();
-        });
+        btnTambah.setOnAction(e -> tambahData());
+        btnEdit.setOnAction(e -> editData());
+        btnHapus.setOnAction(e -> hapusData());
+        btnSimpan.setOnAction(e -> simpanKeFile());
 
         tableView.setOnMouseClicked(e -> {
             Customer c = tableView.getSelectionModel().getSelectedItem();
@@ -95,40 +90,6 @@ public class ManajemenCustomer extends Application {
             }
         });
 
-        btnEdit.setOnAction(e -> {
-            Customer c = tableView.getSelectionModel().getSelectedItem();
-            if (c == null) {
-                showAlert("Error", "Pilih data yang ingin diedit!");
-                return;
-            }
-            c.setId(tfId.getText());
-            c.setNama(tfNama.getText());
-            c.setEmail(tfEmail.getText());
-            c.setTelepon(tfTelepon.getText());
-            tableView.refresh();
-            clearForm();
-        });
-
-        btnHapus.setOnAction(e -> {
-            Customer c = tableView.getSelectionModel().getSelectedItem();
-            if (c == null) {
-                showAlert("Error", "Pilih data yang ingin dihapus!");
-                return;
-            }
-            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-            confirm.setTitle("Konfirmasi");
-            confirm.setHeaderText(null);
-            confirm.setContentText("Hapus " + c.getNama() + "?");
-            confirm.showAndWait().ifPresent(r -> {
-                if (r == ButtonType.OK) {
-                    data.remove(c);
-                    clearForm();
-                }
-            });
-        });
-
-        btnSimpan.setOnAction(e -> simpanKeFile());
-
         VBox root = new VBox(10, lblTitle, form, tombol, tfCari, tableView);
         root.setPadding(new Insets(10));
 
@@ -136,6 +97,77 @@ public class ManajemenCustomer extends Application {
         primaryStage.setTitle("Manajemen Customer");
         primaryStage.setScene(scene);
         primaryStage.show();
+    }
+
+    private void tambahData() {
+        String id = tfId.getText();
+        String nama = tfNama.getText();
+        String email = tfEmail.getText();
+        String telepon = tfTelepon.getText();
+
+        if (!validasiInput(id, nama, email, telepon)) return;
+
+        data.add(new Customer(id, nama, email, telepon));
+        clearForm();
+    }
+
+    private void editData() {
+        Customer c = tableView.getSelectionModel().getSelectedItem();
+        if (c == null) {
+            showAlert("Error", "Pilih data yang ingin diedit!");
+            return;
+        }
+        String id = tfId.getText();
+        String nama = tfNama.getText();
+        String email = tfEmail.getText();
+        String telepon = tfTelepon.getText();
+
+        if (!validasiInput(id, nama, email, telepon)) return;
+
+        c.setId(id);
+        c.setNama(nama);
+        c.setEmail(email);
+        c.setTelepon(telepon);
+        tableView.refresh();
+        clearForm();
+    }
+
+    private void hapusData() {
+        Customer c = tableView.getSelectionModel().getSelectedItem();
+        if (c == null) {
+            showAlert("Error", "Pilih data yang ingin dihapus!");
+            return;
+        }
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Konfirmasi");
+        confirm.setHeaderText(null);
+        confirm.setContentText("Hapus " + c.getNama() + "?");
+        confirm.showAndWait().ifPresent(r -> {
+            if (r == ButtonType.OK) {
+                data.remove(c);
+                clearForm();
+            }
+        });
+    }
+
+    private boolean validasiInput(String id, String nama, String email, String telepon) {
+        if (id.isEmpty() || nama.isEmpty() || email.isEmpty() || telepon.isEmpty()) {
+            showAlert("Error", "Semua kolom wajib diisi!");
+            return false;
+        }
+        if (!email.contains("@") || !email.contains(".")) {
+            showAlert("Error", "Format email tidak valid!");
+            return false;
+        }
+        if (!telepon.matches("\\d+")) {
+            showAlert("Error", "Nomor telepon harus berupa angka!");
+            return false;
+        }
+        if (!nama.matches("[a-zA-Z\\s]+")) {
+            showAlert("Error", "Nama hanya boleh berisi huruf dan spasi!");
+            return false;
+        }
+        return true;
     }
 
     private void clearForm() {
