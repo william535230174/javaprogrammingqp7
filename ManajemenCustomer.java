@@ -40,7 +40,6 @@ public class ManajemenCustomer extends Application {
         HBox tombol = new HBox(10, btnTambah, btnEdit, btnHapus);
         tombol.setPadding(new Insets(10));
 
-        // === TABLE ===
         tableView = new TableView<>();
         TableColumn<Customer, String> colId = new TableColumn<>("ID");
         TableColumn<Customer, String> colNama = new TableColumn<>("Nama");
@@ -57,24 +56,67 @@ public class ManajemenCustomer extends Application {
 
         data = FXCollections.observableArrayList(
                 new Customer("C001", "Andi", "andi@gmail.com", "08123456789"),
-                new Customer("C002", "Budi", "budi@gmail.com", "08234567890")
+                new Customer("C002", "Budi", "budi@gmail.com", "08234567890"),
+                new Customer("C003", "Citra", "citra@gmail.com", "08345678901")
         );
         tableView.setItems(data);
 
         btnTambah.setOnAction(e -> {
-            String id = tfId.getText();
-            String nama = tfNama.getText();
-            String email = tfEmail.getText();
-            String telepon = tfTelepon.getText();
-
-            if (id.isEmpty() || nama.isEmpty() || email.isEmpty() || telepon.isEmpty()) {
+            if (tfId.getText().isEmpty() || tfNama.getText().isEmpty() ||
+                tfEmail.getText().isEmpty() || tfTelepon.getText().isEmpty()) {
                 showAlert("Error", "Semua kolom harus diisi!");
                 return;
             }
 
-            Customer c = new Customer(id, nama, email, telepon);
+            Customer c = new Customer(tfId.getText(), tfNama.getText(), tfEmail.getText(), tfTelepon.getText());
             data.add(c);
             clearForm();
+        });
+
+        tableView.setOnMouseClicked(e -> {
+            Customer selected = tableView.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                tfId.setText(selected.getId());
+                tfNama.setText(selected.getNama());
+                tfEmail.setText(selected.getEmail());
+                tfTelepon.setText(selected.getTelepon());
+            }
+        });
+
+        btnEdit.setOnAction(e -> {
+            Customer selected = tableView.getSelectionModel().getSelectedItem();
+            if (selected == null) {
+                showAlert("Error", "Pilih data yang ingin diedit!");
+                return;
+            }
+
+            selected.setId(tfId.getText());
+            selected.setNama(tfNama.getText());
+            selected.setEmail(tfEmail.getText());
+            selected.setTelepon(tfTelepon.getText());
+
+            tableView.refresh();
+            clearForm();
+        });
+
+        btnHapus.setOnAction(e -> {
+            Customer selected = tableView.getSelectionModel().getSelectedItem();
+            if (selected == null) {
+                showAlert("Error", "Pilih data yang ingin dihapus!");
+                return;
+            }
+
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+            confirm.setTitle("Konfirmasi Hapus");
+            confirm.setHeaderText(null);
+            confirm.setContentText("Apakah kamu yakin ingin menghapus data " + selected.getNama() + "?");
+
+            confirm.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.OK) {
+                    data.remove(selected);
+                    clearForm();
+                }
+            });
         });
 
         VBox root = new VBox(10, lblTitle, form, tombol, tableView);
@@ -123,4 +165,9 @@ class Customer {
     public String getNama() { return nama; }
     public String getEmail() { return email; }
     public String getTelepon() { return telepon; }
+
+    public void setId(String id) { this.id = id; }
+    public void setNama(String nama) { this.nama = nama; }
+    public void setEmail(String email) { this.email = email; }
+    public void setTelepon(String telepon) { this.telepon = telepon; }
 }
