@@ -1,7 +1,10 @@
 import javafx.application.Application;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
@@ -10,6 +13,7 @@ public class ManajemenCustomer extends Application {
     private TextField tfId, tfNama, tfEmail, tfTelepon;
     private Button btnTambah, btnEdit, btnHapus;
     private TableView<Customer> tableView;
+    private ObservableList<Customer> data;
 
     @Override
     public void start(Stage primaryStage) {
@@ -38,8 +42,28 @@ public class ManajemenCustomer extends Application {
         HBox tombol = new HBox(10, btnTambah, btnEdit, btnHapus);
         tombol.setPadding(new Insets(10));
 
-        // Tabel (belum ada kolom)
+        // === TABLEVIEW ===
         tableView = new TableView<>();
+        TableColumn<Customer, String> colId = new TableColumn<>("ID");
+        TableColumn<Customer, String> colNama = new TableColumn<>("Nama");
+        TableColumn<Customer, String> colEmail = new TableColumn<>("Email");
+        TableColumn<Customer, String> colTelepon = new TableColumn<>("Telepon");
+
+        colId.setCellValueFactory(new PropertyValueFactory<>("id"));
+        colNama.setCellValueFactory(new PropertyValueFactory<>("nama"));
+        colEmail.setCellValueFactory(new PropertyValueFactory<>("email"));
+        colTelepon.setCellValueFactory(new PropertyValueFactory<>("telepon"));
+
+        tableView.getColumns().addAll(colId, colNama, colEmail, colTelepon);
+        tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        // === DATA AWAL ===
+        data = FXCollections.observableArrayList(
+                new Customer("C001", "Andi", "andi@gmail.com", "08123456789"),
+                new Customer("C002", "Budi", "budi@gmail.com", "08234567890"),
+                new Customer("C003", "Citra", "citra@gmail.com", "08345678901")
+        );
+        tableView.setItems(data);
 
         VBox root = new VBox(10, lblTitle, form, tombol, tableView);
         root.setPadding(new Insets(10));
@@ -55,7 +79,7 @@ public class ManajemenCustomer extends Application {
     }
 }
 
-// Model Customer
+// === MODEL CUSTOMER ===
 class Customer {
     private String id;
     private String nama;
