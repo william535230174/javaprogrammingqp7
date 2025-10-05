@@ -1,242 +1,225 @@
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.collections.transformation.FilteredList;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
-import java.io.*;
 
 public class ManajemenCustomer extends Application {
 
-    private TextField tfId, tfNama, tfEmail, tfTelepon, tfCari;
-    private Button btnTambah, btnEdit, btnHapus, btnSimpan;
-    private TableView<Customer> tableView;
-    private ObservableList<Customer> data;
-    private FilteredList<Customer> filteredData;
-    private final String FILE_NAME = "customers.csv";
-
-    @Override
-    public void start(Stage primaryStage) {
-        Label lblTitle = new Label("📋 Manajemen Customer");
-        lblTitle.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
-
-        tfId = new TextField();
-        tfNama = new TextField();
-        tfEmail = new TextField();
-        tfTelepon = new TextField();
-        tfCari = new TextField();
-
-        tfId.setPromptText("ID");
-        tfNama.setPromptText("Nama");
-        tfEmail.setPromptText("Email");
-        tfTelepon.setPromptText("Telepon");
-        tfCari.setPromptText("Cari nama/email...");
-
-        HBox form = new HBox(10, tfId, tfNama, tfEmail, tfTelepon);
-        form.setPadding(new Insets(10));
-
-        btnTambah = new Button("Tambah");
-        btnEdit = new Button("Edit");
-        btnHapus = new Button("Hapus");
-        btnSimpan = new Button("Simpan ke File");
-
-        HBox tombol = new HBox(10, btnTambah, btnEdit, btnHapus, btnSimpan);
-        tombol.setPadding(new Insets(10));
-
-        TableColumn<Customer, String> colId = new TableColumn<>("ID");
-        TableColumn<Customer, String> colNama = new TableColumn<>("Nama");
-        TableColumn<Customer, String> colEmail = new TableColumn<>("Email");
-        TableColumn<Customer, String> colTelepon = new TableColumn<>("Telepon");
-
-        colId.setCellValueFactory(new PropertyValueFactory<>("id"));
-        colNama.setCellValueFactory(new PropertyValueFactory<>("nama"));
-        colEmail.setCellValueFactory(new PropertyValueFactory<>("email"));
-        colTelepon.setCellValueFactory(new PropertyValueFactory<>("telepon"));
-
-        tableView = new TableView<>();
-        tableView.getColumns().addAll(colId, colNama, colEmail, colTelepon);
-        tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-
-        data = FXCollections.observableArrayList();
-        bacaDariFile();
-        filteredData = new FilteredList<>(data, p -> true);
-        tableView.setItems(filteredData);
-
-        tfCari.textProperty().addListener((obs, oldVal, newVal) -> {
-            filteredData.setPredicate(customer -> {
-                if (newVal == null || newVal.isEmpty()) return true;
-                String lower = newVal.toLowerCase();
-                return customer.getNama().toLowerCase().contains(lower)
-                        || customer.getEmail().toLowerCase().contains(lower);
-            });
-        });
-
-        btnTambah.setOnAction(e -> tambahData());
-        btnEdit.setOnAction(e -> editData());
-        btnHapus.setOnAction(e -> hapusData());
-        btnSimpan.setOnAction(e -> simpanKeFile());
-
-        tableView.setOnMouseClicked(e -> {
-            Customer c = tableView.getSelectionModel().getSelectedItem();
-            if (c != null) {
-                tfId.setText(c.getId());
-                tfNama.setText(c.getNama());
-                tfEmail.setText(c.getEmail());
-                tfTelepon.setText(c.getTelepon());
-            }
-        });
-
-        VBox root = new VBox(10, lblTitle, form, tombol, tfCari, tableView);
-        root.setPadding(new Insets(10));
-
-        Scene scene = new Scene(root, 800, 480);
-        primaryStage.setTitle("Manajemen Customer");
-        primaryStage.setScene(scene);
-        primaryStage.show();
-    }
-
-    private void tambahData() {
-        String id = tfId.getText();
-        String nama = tfNama.getText();
-        String email = tfEmail.getText();
-        String telepon = tfTelepon.getText();
-
-        if (!validasiInput(id, nama, email, telepon)) return;
-
-        data.add(new Customer(id, nama, email, telepon));
-        clearForm();
-    }
-
-    private void editData() {
-        Customer c = tableView.getSelectionModel().getSelectedItem();
-        if (c == null) {
-            showAlert("Error", "Pilih data yang ingin diedit!");
-            return;
-        }
-        String id = tfId.getText();
-        String nama = tfNama.getText();
-        String email = tfEmail.getText();
-        String telepon = tfTelepon.getText();
-
-        if (!validasiInput(id, nama, email, telepon)) return;
-
-        c.setId(id);
-        c.setNama(nama);
-        c.setEmail(email);
-        c.setTelepon(telepon);
-        tableView.refresh();
-        clearForm();
-    }
-
-    private void hapusData() {
-        Customer c = tableView.getSelectionModel().getSelectedItem();
-        if (c == null) {
-            showAlert("Error", "Pilih data yang ingin dihapus!");
-            return;
-        }
-        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-        confirm.setTitle("Konfirmasi");
-        confirm.setHeaderText(null);
-        confirm.setContentText("Hapus " + c.getNama() + "?");
-        confirm.showAndWait().ifPresent(r -> {
-            if (r == ButtonType.OK) {
-                data.remove(c);
-                clearForm();
-            }
-        });
-    }
-
-    private boolean validasiInput(String id, String nama, String email, String telepon) {
-        if (id.isEmpty() || nama.isEmpty() || email.isEmpty() || telepon.isEmpty()) {
-            showAlert("Error", "Semua kolom wajib diisi!");
-            return false;
-        }
-        if (!email.contains("@") || !email.contains(".")) {
-            showAlert("Error", "Format email tidak valid!");
-            return false;
-        }
-        if (!telepon.matches("\\d+")) {
-            showAlert("Error", "Nomor telepon harus berupa angka!");
-            return false;
-        }
-        if (!nama.matches("[a-zA-Z\\s]+")) {
-            showAlert("Error", "Nama hanya boleh berisi huruf dan spasi!");
-            return false;
-        }
-        return true;
-    }
-
-    private void clearForm() {
-        tfId.clear();
-        tfNama.clear();
-        tfEmail.clear();
-        tfTelepon.clear();
-    }
-
-    private void showAlert(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-
-    private void simpanKeFile() {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_NAME))) {
-            for (Customer c : data) {
-                writer.write(c.getId() + "," + c.getNama() + "," + c.getEmail() + "," + c.getTelepon());
-                writer.newLine();
-            }
-            showAlert("Sukses", "Data berhasil disimpan!");
-        } catch (IOException e) {
-            showAlert("Error", "Gagal menyimpan data.");
-        }
-    }
-
-    private void bacaDariFile() {
-        File file = new File(FILE_NAME);
-        if (!file.exists()) return;
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] p = line.split(",");
-                if (p.length == 4)
-                    data.add(new Customer(p[0], p[1], p[2], p[3]));
-            }
-        } catch (IOException e) {
-            showAlert("Error", "Gagal membaca data.");
-        }
-    }
+    private Stage primaryStage;
+    private ObservableList<Customer> customerData;
+    private TableView<Customer> tableCustomer;
 
     public static void main(String[] args) {
         launch(args);
     }
-}
 
-class Customer {
-    private String id;
-    private String nama;
-    private String email;
-    private String telepon;
-
-    public Customer(String id, String nama, String email, String telepon) {
-        this.id = id;
-        this.nama = nama;
-        this.email = email;
-        this.telepon = telepon;
+    @Override
+    public void start(Stage primaryStage) {
+        this.primaryStage = primaryStage;
+        customerData = FXCollections.observableArrayList();
+        showLoginPage();
     }
 
-    public String getId() { return id; }
-    public String getNama() { return nama; }
-    public String getEmail() { return email; }
-    public String getTelepon() { return telepon; }
+    private void showLoginPage() {
+        Label lblUser = new Label("Username:");
+        TextField tfUser = new TextField();
+        Label lblPass = new Label("Password:");
+        PasswordField tfPass = new PasswordField();
+        Button btnLogin = new Button("Login");
+        Label lblMsg = new Label();
 
-    public void setId(String id) { this.id = id; }
-    public void setNama(String nama) { this.nama = nama; }
-    public void setEmail(String email) { this.email = email; }
-    public void setTelepon(String telepon) { this.telepon = telepon; }
+        VBox loginPane = new VBox(10, lblUser, tfUser, lblPass, tfPass, btnLogin, lblMsg);
+        loginPane.setPadding(new Insets(20));
+
+        btnLogin.setOnAction(e -> {
+            if (tfUser.getText().equals("admin") && tfPass.getText().equals("123")) {
+                showMenuUtama();
+            } else {
+                lblMsg.setText("Login gagal!");
+                lblMsg.setStyle("-fx-text-fill:red;");
+            }
+        });
+
+        primaryStage.setScene(new Scene(loginPane, 300, 200));
+        primaryStage.setTitle("Login Aplikasi Gudang");
+        primaryStage.show();
+    }
+
+    private void showMenuUtama() {
+        Label lblTitle = new Label("Menu Utama");
+        Button btnBarang = new Button("Manajemen Barang");
+        Button btnSupplier = new Button("Manajemen Supplier");
+        Button btnCustomer = new Button("Manajemen Customer");
+
+        btnBarang.setOnAction(e -> new Alert(Alert.AlertType.INFORMATION, "Manajemen Barang belum dibuat.").showAndWait());
+        btnSupplier.setOnAction(e -> new Alert(Alert.AlertType.INFORMATION, "Manajemen Supplier belum dibuat.").showAndWait());
+        btnCustomer.setOnAction(e -> showManajemenCustomer());
+
+        VBox vbox = new VBox(15, lblTitle, btnBarang, btnSupplier, btnCustomer);
+        vbox.setPadding(new Insets(20));
+
+        primaryStage.setScene(new Scene(vbox, 400, 250));
+        primaryStage.setTitle("Menu Utama");
+        primaryStage.show();
+    }
+
+    private void showManajemenCustomer() {
+        Label lblTitle = new Label("Manajemen Customer");
+
+        tableCustomer = new TableView<>();
+        TableColumn<Customer, String> colId = new TableColumn<>("Id");
+        colId.setCellValueFactory(new PropertyValueFactory<>("id"));
+        TableColumn<Customer, String> colNama = new TableColumn<>("Nama");
+        colNama.setCellValueFactory(new PropertyValueFactory<>("nama"));
+        TableColumn<Customer, String> colEmail = new TableColumn<>("Email");
+        colEmail.setCellValueFactory(new PropertyValueFactory<>("email"));
+        TableColumn<Customer, String> colTelepon = new TableColumn<>("Telepon");
+        colTelepon.setCellValueFactory(new PropertyValueFactory<>("telepon"));
+        tableCustomer.getColumns().addAll(colId, colNama, colEmail, colTelepon);
+        tableCustomer.setItems(customerData);
+
+        Button btnTambah = new Button("Tambah Customer");
+        Button btnEdit = new Button("Edit Customer");
+        Button btnHapus = new Button("Hapus Customer");
+
+        btnTambah.setOnAction(e -> showTambahCustomerWindow());
+        btnEdit.setOnAction(e -> editCustomer());
+        btnHapus.setOnAction(e -> hapusCustomer());
+
+        HBox aksi = new HBox(10, btnTambah, btnEdit, btnHapus);
+        VBox vbox = new VBox(10, lblTitle, tableCustomer, aksi);
+        vbox.setPadding(new Insets(15));
+
+        primaryStage.setScene(new Scene(vbox, 600, 400));
+        primaryStage.setTitle("Manajemen Customer");
+        primaryStage.show();
+    }
+
+    private void showTambahCustomerWindow() {
+        Stage stage = new Stage();
+        TextField tfId = new TextField();
+        tfId.setPromptText("ID Customer");
+        TextField tfNama = new TextField();
+        tfNama.setPromptText("Nama Customer");
+        TextField tfEmail = new TextField();
+        tfEmail.setPromptText("Email");
+        TextField tfTelepon = new TextField();
+        tfTelepon.setPromptText("Nomor Telepon");
+        Button btnSimpan = new Button("Simpan");
+        Label lblMsg = new Label();
+
+        btnSimpan.setOnAction(e -> {
+            String id = tfId.getText().trim();
+            String nama = tfNama.getText().trim();
+            String email = tfEmail.getText().trim();
+            String telp = tfTelepon.getText().trim();
+
+            if (id.isEmpty() || nama.isEmpty() || email.isEmpty()) {
+                lblMsg.setText("Mandatory field harus diisi");
+                lblMsg.setStyle("-fx-text-fill:red;");
+                return;
+            }
+            if (!email.contains("@")) {
+                lblMsg.setText("Email tidak valid");
+                lblMsg.setStyle("-fx-text-fill:red;");
+                return;
+            }
+            for (Customer c : customerData) {
+                if (c.getId().equals(id)) {
+                    lblMsg.setText("ID customer sudah ada");
+                    lblMsg.setStyle("-fx-text-fill:red;");
+                    return;
+                }
+            }
+            customerData.add(new Customer(id, nama, email, telp));
+            lblMsg.setText("Customer ditambahkan");
+            lblMsg.setStyle("-fx-text-fill:green;");
+            stage.close();
+        });
+
+        VBox vbox = new VBox(10, tfId, tfNama, tfEmail, tfTelepon, btnSimpan, lblMsg);
+        vbox.setPadding(new Insets(15));
+        stage.setScene(new Scene(vbox, 300, 250));
+        stage.setTitle("Tambah Customer");
+        stage.show();
+    }
+
+    private void editCustomer() {
+        Customer selected = tableCustomer.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            new Alert(Alert.AlertType.WARNING, "Pilih data untuk diedit!").showAndWait();
+            return;
+        }
+        TextField tfNama = new TextField(selected.getNama());
+        TextField tfEmail = new TextField(selected.getEmail());
+        TextField tfTelepon = new TextField(selected.getTelepon());
+        tfNama.setPromptText("Nama");
+        tfEmail.setPromptText("Email");
+        tfTelepon.setPromptText("Telepon");
+        Button btnUpdate = new Button("Update");
+
+        Stage stage = new Stage();
+        btnUpdate.setOnAction(e -> {
+            if (tfNama.getText().isEmpty() || tfEmail.getText().isEmpty()) {
+                new Alert(Alert.AlertType.ERROR, "Mandatory field harus diisi").showAndWait();
+                return;
+            }
+            if (!tfEmail.getText().contains("@")) {
+                new Alert(Alert.AlertType.ERROR, "Email tidak valid").showAndWait();
+                return;
+            }
+            selected.setNama(tfNama.getText());
+            selected.setEmail(tfEmail.getText());
+            selected.setTelepon(tfTelepon.getText());
+            tableCustomer.refresh();
+            stage.close();
+        });
+
+        VBox vbox = new VBox(10, new Label("ID: " + selected.getId()), tfNama, tfEmail, tfTelepon, btnUpdate);
+        vbox.setPadding(new Insets(15));
+        stage.setScene(new Scene(vbox, 300, 220));
+        stage.setTitle("Edit Customer");
+        stage.show();
+    }
+
+    private void hapusCustomer() {
+        Customer selected = tableCustomer.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            new Alert(Alert.AlertType.WARNING, "Pilih data untuk dihapus!").showAndWait();
+            return;
+        }
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "Yakin hapus data?", ButtonType.YES, ButtonType.NO);
+        confirm.showAndWait().ifPresent(res -> {
+            if (res == ButtonType.YES) {
+                customerData.remove(selected);
+            }
+        });
+    }
+
+    public static class Customer {
+        private String id;
+        private String nama;
+        private String email;
+        private String telepon;
+
+        public Customer(String id, String nama, String email, String telepon) {
+            this.id = id;
+            this.nama = nama;
+            this.email = email;
+            this.telepon = telepon;
+        }
+
+        public String getId() { return id; }
+        public String getNama() { return nama; }
+        public String getEmail() { return email; }
+        public String getTelepon() { return telepon; }
+        public void setNama(String nama) { this.nama = nama; }
+        public void setEmail(String email) { this.email = email; }
+        public void setTelepon(String telepon) { this.telepon = telepon; }
+    }
 }
