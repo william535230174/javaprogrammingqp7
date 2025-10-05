@@ -1,0 +1,11 @@
+{
+    "configurations": [
+        {
+        "type": "java",
+        "name": "Run JavaFX App",
+        "request": "launch",
+        "mainClass": "ManajemenCustomer",
+        "vmArgs": "--module-path \"D:/Coding Apps/JavaFX/javafx-sdk-25/lib\" --add-modules javafx.controls,javafx.fxml"
+        }
+    ]
+}
