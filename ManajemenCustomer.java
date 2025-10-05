@@ -20,7 +20,6 @@ public class ManajemenCustomer extends Application {
         Label lblTitle = new Label("Manajemen Customer");
         lblTitle.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
 
-        // Form Input
         tfId = new TextField();
         tfNama = new TextField();
         tfEmail = new TextField();
@@ -34,7 +33,6 @@ public class ManajemenCustomer extends Application {
         HBox form = new HBox(10, tfId, tfNama, tfEmail, tfTelepon);
         form.setPadding(new Insets(10));
 
-        // Tombol
         btnTambah = new Button("Tambah");
         btnEdit = new Button("Edit");
         btnHapus = new Button("Hapus");
@@ -42,7 +40,7 @@ public class ManajemenCustomer extends Application {
         HBox tombol = new HBox(10, btnTambah, btnEdit, btnHapus);
         tombol.setPadding(new Insets(10));
 
-        // === TABLEVIEW ===
+        // === TABLE ===
         tableView = new TableView<>();
         TableColumn<Customer, String> colId = new TableColumn<>("ID");
         TableColumn<Customer, String> colNama = new TableColumn<>("Nama");
@@ -57,13 +55,27 @@ public class ManajemenCustomer extends Application {
         tableView.getColumns().addAll(colId, colNama, colEmail, colTelepon);
         tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
-        // === DATA AWAL ===
         data = FXCollections.observableArrayList(
                 new Customer("C001", "Andi", "andi@gmail.com", "08123456789"),
-                new Customer("C002", "Budi", "budi@gmail.com", "08234567890"),
-                new Customer("C003", "Citra", "citra@gmail.com", "08345678901")
+                new Customer("C002", "Budi", "budi@gmail.com", "08234567890")
         );
         tableView.setItems(data);
+
+        btnTambah.setOnAction(e -> {
+            String id = tfId.getText();
+            String nama = tfNama.getText();
+            String email = tfEmail.getText();
+            String telepon = tfTelepon.getText();
+
+            if (id.isEmpty() || nama.isEmpty() || email.isEmpty() || telepon.isEmpty()) {
+                showAlert("Error", "Semua kolom harus diisi!");
+                return;
+            }
+
+            Customer c = new Customer(id, nama, email, telepon);
+            data.add(c);
+            clearForm();
+        });
 
         VBox root = new VBox(10, lblTitle, form, tombol, tableView);
         root.setPadding(new Insets(10));
@@ -74,12 +86,26 @@ public class ManajemenCustomer extends Application {
         primaryStage.show();
     }
 
+    private void clearForm() {
+        tfId.clear();
+        tfNama.clear();
+        tfEmail.clear();
+        tfTelepon.clear();
+    }
+
+    private void showAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
     public static void main(String[] args) {
         launch(args);
     }
 }
 
-// === MODEL CUSTOMER ===
 class Customer {
     private String id;
     private String nama;
