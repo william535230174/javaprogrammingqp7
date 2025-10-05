@@ -8,17 +8,20 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
+import java.io.*;
+
 public class ManajemenCustomer extends Application {
 
     private TextField tfId, tfNama, tfEmail, tfTelepon;
-    private Button btnTambah, btnEdit, btnHapus;
+    private Button btnTambah, btnEdit, btnHapus, btnSimpan;
     private TableView<Customer> tableView;
     private ObservableList<Customer> data;
+    private final String FILE_NAME = "customers.csv";
 
     @Override
     public void start(Stage primaryStage) {
-        Label lblTitle = new Label("Manajemen Customer");
-        lblTitle.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
+        Label lblTitle = new Label("📋 Manajemen Customer");
+        lblTitle.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
 
         tfId = new TextField();
         tfNama = new TextField();
@@ -36,8 +39,9 @@ public class ManajemenCustomer extends Application {
         btnTambah = new Button("Tambah");
         btnEdit = new Button("Edit");
         btnHapus = new Button("Hapus");
+        btnSimpan = new Button("Simpan ke File");
 
-        HBox tombol = new HBox(10, btnTambah, btnEdit, btnHapus);
+        HBox tombol = new HBox(10, btnTambah, btnEdit, btnHapus, btnSimpan);
         tombol.setPadding(new Insets(10));
 
         tableView = new TableView<>();
@@ -54,11 +58,8 @@ public class ManajemenCustomer extends Application {
         tableView.getColumns().addAll(colId, colNama, colEmail, colTelepon);
         tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
-        data = FXCollections.observableArrayList(
-                new Customer("C001", "Andi", "andi@gmail.com", "08123456789"),
-                new Customer("C002", "Budi", "budi@gmail.com", "08234567890"),
-                new Customer("C003", "Citra", "citra@gmail.com", "08345678901")
-        );
+        data = FXCollections.observableArrayList();
+        bacaDariFile();
         tableView.setItems(data);
 
         btnTambah.setOnAction(e -> {
@@ -119,11 +120,13 @@ public class ManajemenCustomer extends Application {
             });
         });
 
+        btnSimpan.setOnAction(e -> simpanKeFile());
+
         VBox root = new VBox(10, lblTitle, form, tombol, tableView);
         root.setPadding(new Insets(10));
 
-        Scene scene = new Scene(root, 800, 400);
-        primaryStage.setTitle("Manajemen Customer");
+        Scene scene = new Scene(root, 800, 450);
+        primaryStage.setTitle("Manajemen Customer - Dengan Penyimpanan File");
         primaryStage.setScene(scene);
         primaryStage.show();
     }
@@ -141,6 +144,35 @@ public class ManajemenCustomer extends Application {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    private void simpanKeFile() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_NAME))) {
+            for (Customer c : data) {
+                writer.write(c.getId() + "," + c.getNama() + "," + c.getEmail() + "," + c.getTelepon());
+                writer.newLine();
+            }
+            showAlert("Sukses", "Data berhasil disimpan ke file!");
+        } catch (IOException e) {
+            showAlert("Error", "Gagal menyimpan data ke file!");
+        }
+    }
+
+    private void bacaDariFile() {
+        File file = new File(FILE_NAME);
+        if (!file.exists()) return;
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] p = line.split(",");
+                if (p.length == 4) {
+                    data.add(new Customer(p[0], p[1], p[2], p[3]));
+                }
+            }
+        } catch (IOException e) {
+            showAlert("Error", "Gagal membaca data dari file!");
+        }
     }
 
     public static void main(String[] args) {
